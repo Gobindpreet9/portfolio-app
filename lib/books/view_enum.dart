@@ -1,4 +1,4 @@
-enum View {
+enum ViewType {
   grid,
   list,
 }

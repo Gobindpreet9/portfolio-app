@@ -8,20 +8,20 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gobind/common/common_const.dart';
-import 'package:gobind/styles/styles.dart';
+import 'package:portfolio_app/common/common_const.dart';
+import 'package:portfolio_app/styles/styles.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:pdf/pdf.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:ext_storage/ext_storage.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
 
 class Resume extends StatefulWidget {
   final BuildContext context;
 
-  const Resume({Key key, this.context}) : super(key: key);
+  const Resume({Key? key, required this.context}) : super(key: key);
 
   @override
   _ResumeState createState() => _ResumeState();
@@ -29,11 +29,11 @@ class Resume extends StatefulWidget {
 
 class _ResumeState extends State<Resume> {
   final double gradientLinesHeight = 10;
-  GlobalKey _globalKey;
-  bool isDownloading;
-  ScrollController _scrollController;
-  double positionOfDownload;
-  Size size;
+  late GlobalKey _globalKey;
+  late bool isDownloading;
+  late ScrollController _scrollController;
+  late double positionOfDownload;
+  late Size size;
 
   @override
   initState() {
@@ -55,7 +55,7 @@ class _ResumeState extends State<Resume> {
 
   getPermission() async {
     final status = await Permission.storage.status;
-    if (status.isUndetermined) {
+    if (status.isDenied) {
       await [
         Permission.storage,
       ].request();
@@ -85,7 +85,7 @@ class _ResumeState extends State<Resume> {
         height: size.height / 75,
       ),
       DottedLine(
-        dashColor: Theme.of(context).accentColor,
+        dashColor: Theme.of(context).colorScheme.secondary,
       ),
       SizedBox(
         height: size.height / 75,
@@ -102,8 +102,8 @@ class _ResumeState extends State<Resume> {
           textAlign: TextAlign.center,
           style: Theme.of(context)
               .textTheme
-              .headline1
-              .copyWith(color: Theme.of(context).accentColor),
+              .titleLarge
+              !.copyWith(color: Theme.of(context).colorScheme.secondary),
           maxLines: 1,
         ),
       ),
@@ -113,16 +113,16 @@ class _ResumeState extends State<Resume> {
       AutoSizeText(
         address,
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodyText1,
+        style: Theme.of(context).textTheme.bodyMedium,
         maxLines: 1,
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FlatButton.icon(
+          TextButton.icon(
             icon: Icon(
               FontAwesomeIcons.envelope,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               size: 20,
             ),
             label: Container(
@@ -132,18 +132,18 @@ class _ResumeState extends State<Resume> {
                 maxLines: 1,
                 style: Theme.of(context)
                     .textTheme
-                    .bodyText1
-                    .copyWith(fontSize: 12),
+                    .bodyMedium
+                    !.copyWith(fontSize: 12),
               ),
             ),
             onPressed: () async {
               await launch('mailto:$email?subject=News&body=New%20plugin');
             },
           ),
-          FlatButton.icon(
+          TextButton.icon(
             icon: Icon(
               FontAwesomeIcons.phone,
-              color: Theme.of(context).accentColor,
+              color: Theme.of(context).colorScheme.secondary,
               size: 20,
             ),
             label: Container(
@@ -153,8 +153,8 @@ class _ResumeState extends State<Resume> {
                 maxLines: 1,
                 style: Theme.of(context)
                     .textTheme
-                    .bodyText1
-                    .copyWith(fontSize: 12),
+                    .bodyMedium
+                    !.copyWith(fontSize: 12),
               ),
             ),
             onPressed: () async {
@@ -192,22 +192,22 @@ class _ResumeState extends State<Resume> {
         maxLines: 2,
         style: Theme.of(context)
             .textTheme
-            .subtitle1
-            .copyWith(color: Theme.of(context).accentColor),
+            .titleSmall
+            !.copyWith(color: Theme.of(context).colorScheme.secondary),
       ),
       AutoSizeText(
         subHeading,
         maxLines: 1,
         style: Theme.of(context)
             .textTheme
-            .bodyText1
-            .copyWith(fontStyle: FontStyle.italic),
+            .bodyMedium
+            !.copyWith(fontStyle: FontStyle.italic),
       ),
     ];
   }
 
   List<Row> getBulletPoints(List<String> points, context,
-      {List<String> headings}) {
+      {List<String>? headings}) {
     List<Row> returnList = [];
     points.forEach((element) {
       returnList.add(Row(
@@ -220,8 +220,8 @@ class _ResumeState extends State<Resume> {
             maxLines: 2,
             style: Theme.of(context)
                 .textTheme
-                .bodyText1
-                .copyWith(color: Theme.of(context).accentColor),
+                .bodyMedium
+                !.copyWith(color: Theme.of(context).colorScheme.secondary),
           ),
           SizedBox(
             width: 5,
@@ -229,7 +229,7 @@ class _ResumeState extends State<Resume> {
           Flexible(
             fit: FlexFit.loose,
             child: AutoSizeText(element,
-                maxLines: 4, style: Theme.of(context).textTheme.bodyText1),
+                maxLines: 4, style: Theme.of(context).textTheme.bodyMedium),
           )
         ],
       ));
@@ -256,8 +256,8 @@ class _ResumeState extends State<Resume> {
                     maxLines: 2,
                     style: Theme.of(context)
                         .textTheme
-                        .bodyText1
-                        .copyWith(color: Theme.of(context).accentColor),
+                        .bodyMedium
+                        !.copyWith(color: Theme.of(context).colorScheme.secondary),
                   ),
                 ),
               ],
@@ -277,11 +277,11 @@ class _ResumeState extends State<Resume> {
   }
 
   List<Widget> getSection(
-      {@required BuildContext context,
-      @required Size size,
-      String heading,
-      Widget sidebarChild,
-      @required List<Widget> mainBody}) {
+      {required BuildContext context,
+      required Size size,
+      String? heading,
+      Widget? sidebarChild,
+      required List<Widget> mainBody}) {
     double sidePadding = 5;
     return [
       heading != null
@@ -292,8 +292,8 @@ class _ResumeState extends State<Resume> {
                 heading,
                 style: Theme.of(context)
                     .textTheme
-                    .headline2
-                    .copyWith(color: Theme.of(context).accentColor),
+                    .titleMedium
+                    !.copyWith(color: Theme.of(context).colorScheme.secondary),
                 maxLines: 1,
               ),
             ))
@@ -337,7 +337,7 @@ class _ResumeState extends State<Resume> {
           child: AutoSizeText(
             'Jan 2019 - ${englishLanguage['present']}',
             maxLines: 2,
-            style: Theme.of(context).textTheme.bodyText1,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
         mainBody: [
@@ -389,7 +389,7 @@ class _ResumeState extends State<Resume> {
             child: AutoSizeText(
               'Oct 2020 - Nov 2020',
               maxLines: 2,
-              style: Theme.of(context).textTheme.bodyText1,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
           mainBody: [
@@ -407,7 +407,7 @@ class _ResumeState extends State<Resume> {
             child: AutoSizeText(
               'April 2019 - ${englishLanguage['present']}',
               maxLines: 2,
-              style: Theme.of(context).textTheme.bodyText1,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
           mainBody: [
@@ -426,8 +426,8 @@ class _ResumeState extends State<Resume> {
         sidebarChild: null,
         mainBody: [
           Text(
-            englishLanguage['additionalInfoText'],
-            style: Theme.of(context).textTheme.bodyText1,
+            getKeyValue(englishLanguage, 'additionalInfoText'),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ]);
   }
@@ -447,7 +447,7 @@ class _ResumeState extends State<Resume> {
     });
     try {
       final imageMap = await getImage();
-      createPdf(imageMap);
+      createPdf(imageMap!);
       _notifyUser();
       if (DEBUG) print('saved');
     } catch (e) {
@@ -458,14 +458,16 @@ class _ResumeState extends State<Resume> {
     });
   }
 
-  Future<Uint8List> getImage() async {
+  Future<Uint8List?> getImage() async {
     if (DEBUG) print('inside');
-    RenderRepaintBoundary boundary =
-        _globalKey.currentContext.findRenderObject();
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-    ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    Uint8List imageMap = byteData.buffer.asUint8List();
-    return imageMap;
+    final renderObject = _globalKey.currentContext?.findRenderObject();
+    if (renderObject is RenderRepaintBoundary) {
+      ui.Image image = await renderObject.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List? imageMap = byteData?.buffer.asUint8List();
+      return imageMap;
+    }
+    return null;
   }
 
   createPdf(Uint8List imageMap) async {
@@ -478,17 +480,24 @@ class _ResumeState extends State<Resume> {
         pageFormat: PdfPageFormat.undefined,
         build: (pw.Context context) {
           return pw.Center(
-            child: pw.Image(image, fit: pw.BoxFit.fitWidth),
+            child: pw.Image(image as pw.ImageProvider, fit: pw.BoxFit.fitWidth),
           ); // Center
         }));
 
     File file = File(await getFilePath());
-    await file.writeAsBytes(pdf.save());
+    await file.writeAsBytes(await pdf.save());
   }
 
   Future<String> getFilePath() async {
-    String path = await ExtStorage.getExternalStoragePublicDirectory(
-        ExtStorage.DIRECTORY_DOWNLOADS);
+    Directory downloadsDirectory;
+
+    if (Platform.isAndroid) {
+      downloadsDirectory = (await getExternalStorageDirectory())!;
+    } else {
+      downloadsDirectory = await getApplicationDocumentsDirectory();
+    }
+
+    String path = downloadsDirectory.path;
     return '$path/resume.pdf';
   }
 
@@ -499,7 +508,7 @@ class _ResumeState extends State<Resume> {
 
   showSnackbar() {
     Fluttertoast.showToast(
-        msg: englishLanguage['successfulDownload'],
+        msg: getKeyValue(englishLanguage, 'successfulDownload'),
         timeInSecForIosWeb: 1,
         fontSize: 14.0);
   }
@@ -509,7 +518,7 @@ class _ResumeState extends State<Resume> {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Theme.of(context).accentColor,
+      statusBarColor: Theme.of(context).colorScheme.secondary,
     ));
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
@@ -562,7 +571,7 @@ class _ResumeState extends State<Resume> {
               child: Material(
                 elevation:  1.0,
                 color: !isDownloading
-                    ? Theme.of(context).accentColor
+                    ? Theme.of(context).colorScheme.secondary
                     : Theme.of(context).primaryColor,
                 borderRadius: BorderRadius.circular(30),
                 child: !isDownloading

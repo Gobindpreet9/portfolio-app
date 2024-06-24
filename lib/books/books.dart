@@ -1,12 +1,12 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gobind/services/goodreads.dart';
-import 'package:gobind/books/view_enum.dart';
-import 'package:gobind/common/common.dart';
-import 'package:gobind/common/common_const.dart';
-import 'package:gobind/models/book_model.dart';
-import 'package:gobind/styles/styles.dart';
+import 'package:portfolio_app/services/goodreads.dart';
+import 'package:portfolio_app/books/view_enum.dart';
+import 'package:portfolio_app/common/common.dart';
+import 'package:portfolio_app/common/common_const.dart';
+import 'package:portfolio_app/models/book_model.dart';
+import 'package:portfolio_app/styles/styles.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
@@ -17,16 +17,16 @@ class Books extends StatefulWidget {
 }
 
 class _BooksState extends State<Books> {
-  PagingController<int, Book> _pagingController;
-  List<Book> books;
-  View view;
-  String shelf;
+  late PagingController<int, Book> _pagingController;
+  late List<Book> books;
+  late ViewType view;
+  late String shelf;
   final shelves = {'Recent Reads': 'read', 'In My Bucket List': 'to-read'};
-  Color titleColor;
+  late Color titleColor;
 
   @override
   void initState() {
-    view = View.list;
+    view = ViewType.list;
     shelf = shelves.keys.elementAt(0);
     initializePagingController();
     super.initState();
@@ -81,7 +81,7 @@ class _BooksState extends State<Books> {
       child: Container(
         padding: const EdgeInsets.all(5.0),
         decoration: BoxDecoration(
-            color: Theme.of(context).backgroundColor,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(containerBorderRadius)),
         child: Row(
           children: [
@@ -132,7 +132,7 @@ class _BooksState extends State<Books> {
       children: [
         AutoSizeText(
           '$key: ',
-          style: Theme.of(context).textTheme.bodyText1,
+          style: Theme.of(context).textTheme.bodyMedium,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -140,9 +140,9 @@ class _BooksState extends State<Books> {
           fit: FlexFit.loose,
           child: AutoSizeText(
             value,
-            style: Theme.of(context).textTheme.bodyText1.copyWith(
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: Theme.of(context).textTheme.bodyText1.fontSize + 1),
+                fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize! + 1),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -199,7 +199,7 @@ class _BooksState extends State<Books> {
             width: width,
             height: width / 9,
             decoration: BoxDecoration(
-              color: Theme.of(context).backgroundColor,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.only(
                   bottomRight: Radius.circular(containerBorderRadius),
                   bottomLeft: Radius.circular(containerBorderRadius)),
@@ -210,8 +210,8 @@ class _BooksState extends State<Books> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context)
                     .textTheme
-                    .bodyText1
-                    .copyWith(fontWeight: FontWeight.bold),
+                    .bodyMedium
+                    !.copyWith(fontWeight: FontWeight.bold),
                 minFontSize: 12,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -223,12 +223,12 @@ class _BooksState extends State<Books> {
     );
   }
 
-  Widget getViewButton(View viewButton, Size size) {
+  Widget getViewButton(ViewType viewButton, Size size) {
     return Transform.scale(
       scale: view == viewButton ? 1.1 : 0.9,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).backgroundColor,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(containerBorderRadius),
           boxShadow: [
             view == viewButton
@@ -244,8 +244,8 @@ class _BooksState extends State<Books> {
         child: Center(
           child: IconButton(
             icon: Icon(
-              viewButton == View.list ? Icons.list : Icons.grid_view,
-              color: Theme.of(context).accentColor,
+              viewButton == ViewType.list ? Icons.list : Icons.grid_view,
+              color: Theme.of(context)!.colorScheme.secondary,
               size: size.width * size.height / 15000,
             ),
             onPressed: () {
@@ -263,13 +263,13 @@ class _BooksState extends State<Books> {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Theme.of(context).backgroundColor,
-      statusBarColor: Theme.of(context).backgroundColor,
+      systemNavigationBarColor: Theme.of(context).colorScheme.surface,
+      statusBarColor: Theme.of(context).colorScheme.surface,
     ));
     titleColor = getTitleColor(context);
     Size size = MediaQuery.of(context).size;
     return Scaffold(
-        backgroundColor: Theme.of(context).accentColor,
+        backgroundColor: Theme.of(context)!.colorScheme.secondary,
         appBar: AppBar(
           elevation: 1,
           leading: IconButton(
@@ -280,13 +280,13 @@ class _BooksState extends State<Books> {
             ),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          backgroundColor: Theme.of(context).backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           title: Text(
-            englishLanguage['books'],
+            englishLanguage['books']!,
             style: Theme.of(context)
                 .textTheme
-                .subtitle1
-                .copyWith(color: titleColor),
+                .titleSmall
+                !.copyWith(color: titleColor),
           ),
           centerTitle: true,
         ),
@@ -294,7 +294,7 @@ class _BooksState extends State<Books> {
           children: [
             // view controllers
             Container(
-              color: Theme.of(context).backgroundColor,
+              color: Theme.of(context).colorScheme.surface,
               height: size.width * size.height / 5000,
               padding: EdgeInsets.all(10),
               child: Row(
@@ -304,12 +304,12 @@ class _BooksState extends State<Books> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 5),
                     decoration: BoxDecoration(
-                        color: Theme.of(context).backgroundColor,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius:
                             BorderRadius.circular(containerBorderRadius)),
                     child: DropdownButton<String>(
                       value: shelf,
-                      dropdownColor: Theme.of(context).backgroundColor,
+                      dropdownColor: Theme.of(context).colorScheme.surface,
                       icon: Icon(
                         Icons.arrow_drop_down,
                       ),
@@ -317,11 +317,11 @@ class _BooksState extends State<Books> {
                       elevation: 16,
                       style: Theme.of(context)
                           .textTheme
-                          .subtitle1
-                          .copyWith(color: Theme.of(context).accentColor),
-                      onChanged: (String newValue) {
+                          .titleSmall
+                          !.copyWith(color: Theme.of(context).colorScheme.secondary),
+                      onChanged: (String? newValue) {
                         setState(() {
-                          shelf = newValue;
+                          shelf = newValue!;
                           _pagingController.refresh();
                         });
                       },
@@ -338,17 +338,17 @@ class _BooksState extends State<Books> {
                   Expanded(
                     child: Container(),
                   ),
-                  getViewButton(View.list, size),
+                  getViewButton(ViewType.list, size),
                   SizedBox(
                     width: 5,
                   ),
-                  getViewButton(View.grid, size),
+                  getViewButton(ViewType.grid, size),
                 ],
               ),
             ),
             // books display
             Expanded(
-              child: view == View.list
+              child: view == ViewType.list
                   ? displayBooksList(size)
                   : displayBooksGrid(size),
             ),
@@ -356,13 +356,13 @@ class _BooksState extends State<Books> {
               height: 10,
             ),
             Container(
-              color: Theme.of(context).backgroundColor,
+              color: Theme.of(context).colorScheme.surface,
               width: double.infinity,
               child: Center(
                 child: Text(
-                  englishLanguage['goodreadsMessage'],
-                  style: Theme.of(context).textTheme.bodyText1.copyWith(
-                      color: Theme.of(context).accentColor,
+                  getKeyValue(englishLanguage, 'goodreadsMessage'),
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
                       fontStyle: FontStyle.italic,
                       fontWeight: FontWeight.w300),
                 ),

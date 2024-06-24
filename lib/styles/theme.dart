@@ -1,4 +1,4 @@
-part of styles;
+part of 'styles.dart';
 
 const Color aliceBlue = Color(0xffECF4FE);
 const Color yaleBlue = Color(0xff084A9B);
@@ -13,41 +13,48 @@ const appGradient = LinearGradient(colors: [yaleBlue, indigoDye]);
 // const Color Sapphire = Color(0xff0B54AD);
 
 final ThemeData defaultThemeData = ThemeData(
-    primarySwatch: Colors.blue,
-    primaryColor: aliceBlue,
-    accentColor: indigoDye,
-    backgroundColor: cultured,
-    scaffoldBackgroundColor: cultured,
-    visualDensity: VisualDensity.adaptivePlatformDensity,
-    fontFamily: 'PlayfairDisplay',
-    iconTheme: IconThemeData(color: pureWhite, size: 30),
-    textTheme: TextTheme(
-      headline1: TextStyle(fontSize: 45, color: jet, fontWeight: FontWeight.w900),
-      headline2: TextStyle(fontSize: 24, color: jet, fontWeight: FontWeight.w700),
-      subtitle1: TextStyle(fontSize: 18, color: jet, fontWeight: FontWeight.w600),
-      bodyText1: TextStyle(fontSize: 15, color: jet, fontWeight: FontWeight.w500),
-    )
+  primarySwatch: Colors.blue,
+  primaryColor: aliceBlue,
+  scaffoldBackgroundColor: cultured,
+  visualDensity: VisualDensity.adaptivePlatformDensity,
+  fontFamily: 'PlayfairDisplay',
+  iconTheme: const IconThemeData(color: pureWhite, size: 30),
+  textTheme: const TextTheme(
+    titleLarge: TextStyle(fontSize: 45, color: jet, fontWeight: FontWeight.w900),
+    titleMedium: TextStyle(fontSize: 24, color: jet, fontWeight: FontWeight.w700),
+    titleSmall: TextStyle(fontSize: 18, color: jet, fontWeight: FontWeight.w600),
+    bodyMedium: TextStyle(fontSize: 15, color: jet, fontWeight: FontWeight.w500),
+  ),
+  colorScheme: ColorScheme.fromSwatch().copyWith(
+    secondary: indigoDye,
+    primary: aliceBlue,
+    surface: cultured,
+  ),
 );
 
-final whiteText = defaultThemeData.textTheme.bodyText1.copyWith(color: pureWhite);
+final whiteText = defaultThemeData.textTheme.bodyMedium!.copyWith(color: pureWhite);
 
 const richBlack = Color(0xff121212);
 const pureWhite = Color(0xffffffff);
 
 final ThemeData blackTheme = ThemeData(
-    primarySwatch: Colors.blue,
-    primaryColor: richBlack,
-    accentColor: littleBlueBoy,
-    backgroundColor: richBlack,
-    visualDensity: VisualDensity.adaptivePlatformDensity,
-    fontFamily: 'PlayfairDisplay',
-    iconTheme: IconThemeData(color: pureWhite, size: 30),
-    textTheme: TextTheme(
-      headline1: TextStyle(fontSize: 45, color: pureWhite, fontWeight: FontWeight.w900),
-      headline2: TextStyle(fontSize: 24, color: pureWhite, fontWeight: FontWeight.w700),
-      subtitle1: TextStyle(fontSize: 18, color: pureWhite, fontWeight: FontWeight.w600),
-      bodyText1: TextStyle(fontSize: 15, color: pureWhite, fontWeight: FontWeight.w500),
-    )
+  primarySwatch: Colors.blue,
+  primaryColor: richBlack,
+  scaffoldBackgroundColor: richBlack,
+  visualDensity: VisualDensity.adaptivePlatformDensity,
+  fontFamily: 'PlayfairDisplay',
+  iconTheme: const IconThemeData(color: pureWhite, size: 30),
+  textTheme: const TextTheme(
+    titleLarge: TextStyle(fontSize: 45, color: pureWhite, fontWeight: FontWeight.w900),
+    titleMedium: TextStyle(fontSize: 24, color: pureWhite, fontWeight: FontWeight.w700),
+    titleSmall: TextStyle(fontSize: 18, color: pureWhite, fontWeight: FontWeight.w600),
+    bodyMedium: TextStyle(fontSize: 15, color: pureWhite, fontWeight: FontWeight.w500),
+  ),
+  colorScheme: ColorScheme.fromSwatch().copyWith(
+    secondary: littleBlueBoy,
+    primary: richBlack,
+    surface: richBlack,
+  ),
 );
 
 getHeadingsColor(context){

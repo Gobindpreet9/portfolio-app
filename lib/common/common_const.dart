@@ -130,3 +130,7 @@ const travelCover = 'assets/images/travel.jpg';
 const sunIcon = 'assets/images/sun.png';
 const sunDarkIcon = 'assets/images/sun-dark.png';
 const inProgress = 'assets/images/in_progress.jpg';
+
+String getKeyValue(Map<String, dynamic> map, String key) {
+  return map.containsKey(key) ? map[key]?.toString() ?? '' : '';
+}

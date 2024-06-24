@@ -2,11 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gobind/common/common_const.dart';
-import 'package:gobind/models/suggestion_model.dart';
-import 'package:gobind/services/authentication.dart';
-import 'package:gobind/services/firestore.dart';
-import 'package:gobind/styles/styles.dart';
+import 'package:portfolio_app/common/common_const.dart';
+import 'package:portfolio_app/models/suggestion_model.dart';
+import 'package:portfolio_app/services/authentication.dart';
+import 'package:portfolio_app/services/firestore.dart';
+import 'package:portfolio_app/styles/styles.dart';
 
 class AboutMe extends StatefulWidget {
   @override
@@ -15,11 +15,11 @@ class AboutMe extends StatefulWidget {
 
 class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
   List<String> headingsList = [
-    englishLanguage['books'],
-    englishLanguage['games'],
-    englishLanguage['movies'],
-    englishLanguage['art'],
-    englishLanguage['travel']
+    getKeyValue(englishLanguage, 'books'),
+    getKeyValue(englishLanguage, 'games'),
+    getKeyValue(englishLanguage, 'movies'),
+    getKeyValue(englishLanguage, 'art'),
+    getKeyValue(englishLanguage, 'travel')
   ];
 
   List<String> tabCovers = [
@@ -29,22 +29,21 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
     artCover,
     travelCover
   ];
-
   List<String> bodyText = [
-    englishLanguage['booksBody'],
-    englishLanguage['inProgress'],
-    englishLanguage['inProgress'],
-    englishLanguage['inProgress'],
-    englishLanguage['inProgress'],
+    getKeyValue(englishLanguage, 'booksBody'),
+    getKeyValue(englishLanguage, 'inProgress'),
+    getKeyValue(englishLanguage, 'inProgress'),
+    getKeyValue(englishLanguage, 'inProgress'),
+    getKeyValue(englishLanguage, 'inProgress'),
   ];
 
-  Color headingsColor;
+  late Color headingsColor;
 
-  Color titleColor;
+  late Color titleColor;
 
-  TabController _tabController;
+  late TabController _tabController;
 
-  TextEditingController _dialogController;
+  late TextEditingController _dialogController;
 
   final bodyFont = 'DancingScript';
 
@@ -79,8 +78,8 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
         element,
         style: Theme.of(context)
             .textTheme
-            .subtitle1
-            .copyWith(color: headingsColor, fontSize: 20),
+            .titleSmall
+            !.copyWith(color: headingsColor, fontSize: 20),
         textAlign: TextAlign.center,
       ));
     });
@@ -89,7 +88,7 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
 
   List<Widget> getTabBody(size) {
     List<Widget> returnList = [];
-    headingsList.forEach((element) {
+    for (var element in headingsList) {
       returnList.add(Stack(
         alignment: Alignment.center,
         clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -116,13 +115,13 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
-                  .headline2
+                  .titleMedium!
                   .copyWith(fontFamily: bodyFont, color: pureWhite),
             ),
           )
         ],
       ));
-    });
+    }
     return returnList;
   }
 
@@ -132,7 +131,7 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
       builder: (context) {
         return SingleChildScrollView(
           child: AlertDialog(
-            backgroundColor: Theme.of(context).backgroundColor,
+            backgroundColor: Theme.of(context)!.colorScheme.surface,
             contentPadding: const EdgeInsets.all(16.0),
             content: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -142,27 +141,27 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
                     autofocus: true,
                     decoration: InputDecoration(
                         labelText: englishLanguage['suggest'],
-                        labelStyle: Theme.of(context).textTheme.subtitle1,
+                        labelStyle: Theme.of(context).textTheme.titleSmall,
                         hintText: getHintText(),
                         hintStyle: Theme.of(context)
                             .textTheme
-                            .bodyText1
-                            .copyWith(color: Colors.grey)),
+                            .bodyMedium
+                            !.copyWith(color: Colors.grey)),
                   ),
                 )
               ],
             ),
             actions: <Widget>[
-              FlatButton(
+              TextButton(
                   child: const Text('CANCEL'),
                   onPressed: () {
                     Navigator.pop(context);
                   }),
-              FlatButton(
+              TextButton(
                   child: const Text('SUBMIT'),
                   onPressed: () {
                     FirestoreService().sendSuggestion(Suggestion(
-                        AuthService().currentUser().displayName,
+                        AuthService().currentUser().displayName!,
                         _dialogController.text,
                         Timestamp.now().millisecondsSinceEpoch as String));
                     Navigator.pop(context);
@@ -195,11 +194,11 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
     headingsColor = getHeadingsColor(context);
     titleColor = getTitleColor(context);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Theme.of(context).backgroundColor,
-      statusBarColor: Theme.of(context).backgroundColor,
+      systemNavigationBarColor: Theme.of(context).colorScheme.surface,
+      statusBarColor: Theme.of(context).colorScheme.surface,
     ));
     return Scaffold(
-      backgroundColor: Theme.of(context).backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(
@@ -210,9 +209,9 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          englishLanguage['aboutMe'],
+          getKeyValue(englishLanguage, 'aboutMe'),
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headline1.copyWith(
+          style: Theme.of(context).textTheme.titleLarge!.copyWith(
               color: titleColor, fontSize: 40, fontStyle: FontStyle.italic),
         ),
         centerTitle: true,
@@ -255,9 +254,10 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
             SizedBox(
               height: size.height / 40,
             ),
-            FlatButton(
+            TextButton(
+              onPressed: _showDialog,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 width: size.width,
                 height: 50,
                 decoration: BoxDecoration(
@@ -266,12 +266,11 @@ class _AboutMeState extends State<AboutMe> with SingleTickerProviderStateMixin {
                 ),
                 child: Center(
                   child: Text(
-                    englishLanguage['suggestions'],
+                    getKeyValue(englishLanguage, 'suggestions'),
                     style: whiteText.copyWith(letterSpacing: 1),
                   ),
                 ),
               ),
-              onPressed: _showDialog,
             ),
           ],
         ),

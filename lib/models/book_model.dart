@@ -6,11 +6,11 @@ class Book {
   final String averageRating;
 
   Book(
-      {this.title,
-        this.coverUrl,
-        this.author,
-        this.averageRating,
-        this.goodreadsLink});
+      {required this.title,
+        required this.coverUrl,
+        required this.author,
+        required this.averageRating,
+        required this.goodreadsLink});
 
   factory Book.fromMap(Map<String, dynamic> object) {
     return Book(

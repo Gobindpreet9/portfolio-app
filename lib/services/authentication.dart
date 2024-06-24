@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:gobind/models/user_model.dart';
+import 'package:portfolio_app/models/user_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
@@ -16,10 +16,10 @@ class AuthService {
   }
 
   User currentUser() {
-    return _firebaseAuth.currentUser;
+    return _firebaseAuth.currentUser!;
   }
 
-  Stream<User> get onAuthStateChanged {
+  Stream<User?> get onAuthStateChanged {
     return _firebaseAuth.authStateChanges().map((event) => event);
   }
 
@@ -28,10 +28,10 @@ class AuthService {
     Navigator.pushNamed(context, '/intro');
   }
 
-  Future<User> signInWithGoogle() async {
+  Future<User?> signInWithGoogle() async {
     try {
       final googleUser = await GoogleSignIn().signIn();
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = await googleUser!.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -41,13 +41,13 @@ class AuthService {
       final authResult = await _firebaseAuth.signInWithCredential(credential);
       if (authResult.user != null) {
         UserData user = UserData(
-          uid: authResult.user.uid,
-          displayName: googleUser.displayName,
+          uid: authResult.user!.uid,
+          displayName: googleUser.displayName!,
         );
         await updateUser(user);
-        return authResult.user;
+        return authResult.user!;
       }
-      return authResult.user;
+      return authResult.user!;
     } catch (e) {
       return null;
     }

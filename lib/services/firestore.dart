@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:gobind/common/common_const.dart';
-import 'package:gobind/models/suggestion_model.dart';
+import 'package:portfolio_app/common/common_const.dart';
+import 'package:portfolio_app/models/suggestion_model.dart';
 
 class FirestoreService {
   static final FirestoreService _fireStoreRef = FirestoreService._internal();
@@ -21,7 +21,10 @@ class FirestoreService {
         .collection(usersCollection)
         .doc(user.uid)
         .get();
-    if (snapshot.exists) return snapshot.data()['isAuthorized'];
+    if (snapshot.exists) {
+      Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+      return data?['isAuthorized'];
+    }
     if (DEBUG) print('isAuthorized: User did not exist');
     return false;
   }

@@ -3,7 +3,7 @@ class UserData {
   final String uid;
   final bool isAuthorized;
 
-  UserData({this.uid, this.displayName, this.isAuthorized = false});
+  UserData({required this.uid, required this.displayName, this.isAuthorized = false});
 
   factory UserData.fromMap(Map<String, dynamic> object) {
     return UserData(

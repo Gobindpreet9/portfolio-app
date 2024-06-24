@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
-import 'package:gobind/common/common_const.dart';
-import 'package:gobind/models/book_model.dart';
+import 'package:portfolio_app/common/common_const.dart';
+import 'package:portfolio_app/models/book_model.dart';
 import 'package:xml2json/xml2json.dart';
 import 'dart:convert';
 
@@ -23,12 +23,13 @@ class GoodReadsService {
     if (_isFirstRequest) {
       pageNumber = 1;
     } else {
-      if(pageNumber < 1 || pageNumber > _numOfPages)
+      if(pageNumber < 1 || pageNumber > _numOfPages) {
         return [];
+      }
       if (_booksMap.containsKey(shelf)) {
-        if(_booksMap[shelf].containsKey(pageNumber)){
-          if (_booksMap[shelf][pageNumber].isNotEmpty) {
-            return _booksMap[shelf][pageNumber];
+        if(_booksMap[shelf]!.containsKey(pageNumber)){
+          if (_booksMap[shelf]![pageNumber]!.isNotEmpty) {
+            return _booksMap[shelf]![pageNumber]!;
           }
         }
       }
@@ -41,7 +42,7 @@ class GoodReadsService {
       });
       _booksMap[shelf] = {pageNumber: books};
     }
-    if (DEBUG) print('Books array' + books.toString());
+    if (DEBUG) print('Books array$books');
     return books;
   }
 

@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:gobind/services/authentication.dart';
-import 'package:gobind/services/firestore.dart';
+import 'package:portfolio_app/services/authentication.dart';
+import 'package:portfolio_app/services/firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:gobind/common/common.dart';
-import 'package:gobind/common/common_const.dart';
-import 'package:gobind/styles/styles.dart';
+import 'package:portfolio_app/common/common.dart';
+import 'package:portfolio_app/common/common_const.dart';
+import 'package:portfolio_app/styles/styles.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,8 +16,8 @@ class Intro extends StatefulWidget {
 }
 
 class _IntroState extends State<Intro> {
-  DateTime currentBackPressTime;
-  Stream<User> userStatusStream;
+  late DateTime currentBackPressTime;
+  late Stream<User?> userStatusStream;
   bool isLoggedIn = false;
 
   @override
@@ -48,8 +48,8 @@ class _IntroState extends State<Intro> {
               height: size.height / 20,
             ),
             Text(
-              englishLanguage['contactMe'],
-              style: Theme.of(context).textTheme.headline1.copyWith(
+              getKeyValue(englishLanguage, 'contactMe'),
+              style: Theme.of(context).textTheme.titleLarge!.copyWith(
                   color: pureWhite,
                   fontSize: 50,
                   fontWeight: FontWeight.w600,
@@ -163,7 +163,7 @@ class _IntroState extends State<Intro> {
                         child: Text(
                           full_name,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headline1,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
                       SizedBox(
@@ -179,15 +179,15 @@ class _IntroState extends State<Intro> {
                         constraints: BoxConstraints(maxWidth: 600),
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
-                          englishLanguage['main_bio'],
+                          getKeyValue(englishLanguage, 'main_bio'),
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyText1,
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
                       SizedBox(
                         height: size.height / 20,
                       ),
-                      FlatButton(
+                      TextButton(
                         child: Container(
                           width: 150,
                           height: 50,
@@ -198,7 +198,7 @@ class _IntroState extends State<Intro> {
                           ),
                           child: Center(
                             child: Text(
-                              englishLanguage['checkMyResume'],
+                              getKeyValue(englishLanguage, 'checkMyResume'),
                               style: whiteText,
                             ),
                           ),
@@ -237,11 +237,11 @@ class _IntroState extends State<Intro> {
                     height: 150,
                     child: Center(
                       child: Text(
-                        englishLanguage['moreAboutMe'],
+                        getKeyValue(englishLanguage, 'moreAboutMe'),
                         style: Theme.of(context)
                             .textTheme
-                            .headline2
-                            .copyWith(color: pureWhite),
+                            .titleMedium
+                            !.copyWith(color: pureWhite),
                       ),
                     ),
                   ),
