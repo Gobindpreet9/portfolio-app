@@ -9,6 +9,6 @@ Map<String, Widget Function(BuildContext)> routes = {
   '/': (context) => Intro(),
   '/aboutMe': (context) => AboutMe(),
   '/books': (context) => Books(),
-  '/resume': (context) => Resume(context: context,),
-  '/unauthorized': (context) => Unauthorized(context: context,),
+  '/resume': (context) => const Resume(), // Removed context
+  '/unauthorized': (context) => const Unauthorized(), // Removed context
 };

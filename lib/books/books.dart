@@ -9,74 +9,178 @@ import 'package:portfolio_app/models/book_model.dart';
 import 'package:portfolio_app/styles/styles.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class Books extends StatefulWidget {
+  const Books({super.key});
+
   @override
-  _BooksState createState() => _BooksState();
+  BooksState createState() => BooksState();
 }
 
-class _BooksState extends State<Books> {
-  late PagingController<int, Book> _pagingController;
-  late List<Book> books;
+class BooksState extends State<Books> {
+  final ScrollController _scrollController = ScrollController();
+  final List<Book> _books = [];
+  bool _isLoading = false;
+  bool _isFetchingMore = false;
+  bool _hasReachedMax = false;
+  int _currentPage = 1;
+  dynamic _error;
+
   late ViewType view;
   late String shelf;
-  final shelves = {'Recent Reads': 'read', 'In My Bucket List': 'to-read'};
-  late Color titleColor;
+  final Map<String, String> shelves = {
+    'Recent Reads': 'read',
+    'In My Bucket List': 'to-read'
+  };
+  Color? titleColor;
 
   @override
   void initState() {
-    view = ViewType.list;
-    shelf = shelves.keys.elementAt(0);
-    initializePagingController();
     super.initState();
+    view = ViewType.list;
+    shelf = shelves.keys.first;
+    _isLoading = true;
+    _fetchBooks();
+    _scrollController.addListener(_onScroll);
   }
 
-  initializePagingController() {
-    _pagingController = PagingController<int, Book>(
-      firstPageKey: 1,
-    );
-    _pagingController.addPageRequestListener((pageKey) {
-      _fetchPage(pageKey);
-    });
-  }
-
-  Future<void> _fetchPage(int pageKey) async {
-    try {
-      await getBooks(page: pageKey, shelf: shelves[shelf]);
-      final isLastPage = GoodReadsService().isLastPage(pageKey);
-      if (isLastPage) {
-        _pagingController.appendLastPage(books);
-      } else {
-        final nextPageKey = pageKey + 1;
-        _pagingController.appendPage(books, nextPageKey);
-      }
-    } catch (error) {
-      _pagingController.error = error;
+  void _onScroll() {
+    if (!_isFetchingMore &&
+        !_hasReachedMax &&
+        _scrollController.position.extentAfter < 500) {
+      _fetchBooks(page: _currentPage + 1);
     }
   }
 
-  Future<void> getBooks({page = 1, shelf = 'read'}) async {
-    books = await GoodReadsService().getBooks(pageNumber: page, shelf: shelf);
-    return;
+  Future<void> _fetchBooks({int page = 1}) async {
+    if (_isFetchingMore || (page == 1 && _isLoading && _books.isNotEmpty)) return;
+
+    setState(() {
+      if (page == 1) {
+        _isLoading = true;
+        _error = null;
+      } else {
+        _isFetchingMore = true;
+      }
+    });
+
+    try {
+      final newItems = await GoodReadsService()
+          .getBooks(pageNumber: page, shelf: shelves[shelf] ?? 'read');
+      final isLastPage = GoodReadsService().isLastPage(page);
+
+      if (!mounted) return;
+
+      setState(() {
+        if (page == 1) {
+          _books.clear();
+        }
+        _books.addAll(newItems);
+        _currentPage = page;
+        _hasReachedMax = isLastPage;
+
+        if (page == 1) {
+          _isLoading = false;
+        } else {
+          _isFetchingMore = false;
+        }
+      });
+    } catch (error) {
+       if (!mounted) return;
+       setState(() {
+        _error = error;
+        if (page == 1) {
+          _isLoading = false;
+        } else {
+          _isFetchingMore = false;
+        }
+      });
+    }
   }
 
-  displayBooksList(Size size) {
-    return PagedListView.separated(
-        pagingController: _pagingController,
-        padding: const EdgeInsets.all(8),
-        separatorBuilder: (BuildContext context, int index) => const Divider(),
-        builderDelegate: PagedChildBuilderDelegate<Book>(
-          itemBuilder: (context, book, index) => bookListItem(book),
-          firstPageProgressIndicatorBuilder: (context) =>
-              progressIndicator(context),
-        ));
+  Future<void> _refreshBooks() async {
+    if (!mounted) return;
+    setState(() {
+      _books.clear();
+      _currentPage = 1;
+      _hasReachedMax = false;
+      _error = null;
+    });
+    await _fetchBooks();
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Center(child: progressIndicator(context)),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error loading books.', style: TextStyle(color: theme.colorScheme.error)),
+            const SizedBox(height: 8),
+            Text('$_error', textAlign: TextAlign.center, style: TextStyle(color: theme.colorScheme.error.withAlpha(204))), // 0.8 opacity
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _refreshBooks,
+              child: const Text('Retry'),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildBookListContainer(Size size) {
+    if (_isLoading && _books.isEmpty) {
+      return _buildLoadingIndicator();
+    } else if (_error != null && _books.isEmpty) {
+      return _buildErrorWidget();
+    } else if (_books.isEmpty) {
+      return const Center(child: Text('No books found.'));
+    } else {
+      return view == ViewType.list
+          ? displayBooksList(size)
+          : displayBooksGrid(size);
+    }
+  }
+
+  Widget displayBooksList(Size size) {
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(8),
+      itemCount: _books.length + (_isFetchingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == _books.length) {
+          return _buildLoadingIndicator();
+        }
+        final book = _books[index];
+        return bookListItem(book);
+      },
+      separatorBuilder: (context, index) => const Divider(),
+    );
   }
 
   Widget bookListItem(Book book) {
     return GestureDetector(
       onTap: () async {
-        await launch(book.goodreadsLink);
+        final uri = Uri.parse(book.goodreadsLink);
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not open link: ${book.goodreadsLink}')),
+            );
+          }
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(5.0),
@@ -85,25 +189,23 @@ class _BooksState extends State<Books> {
             borderRadius: BorderRadius.circular(containerBorderRadius)),
         child: Row(
           children: [
-            Container(
+            SizedBox(
               height: 130,
-              constraints: BoxConstraints(minWidth: 30),
+              width: 90,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(containerBorderRadius),
                 child: Hero(
-                  tag: book.coverUrl,
+                  tag: 'book_list_${book.goodreadsLink}',
                   child: CachedNetworkImage(
                     imageUrl: book.coverUrl,
-                    placeholder: (context, url) =>
-                        progressIndicator(context, color: Colors.grey),
-                    errorWidget: (context, url, error) => Icon(Icons.error),
+                    placeholder: (context, url) => progressIndicator(context, color: Colors.grey),
+                    errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image)),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
-            SizedBox(
-              width: 10,
-            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -114,8 +216,7 @@ class _BooksState extends State<Books> {
                   children: [
                     getDetails('Title', book.title),
                     getDetails('Author', book.author),
-                    getDetails(
-                        'Avg Goodreads rating', book.averageRating + '/5'),
+                    getDetails('Avg Rating', '${book.averageRating}/5'),
                   ],
                 ),
               ),
@@ -127,22 +228,29 @@ class _BooksState extends State<Books> {
   }
 
   Widget getDetails(String key, String value) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final bodyMediumStyle = textTheme.bodyMedium;
+    final bodyMediumBoldStyle = bodyMediumStyle?.copyWith(
+      fontWeight: FontWeight.w700,
+      fontSize: (bodyMediumStyle?.fontSize ?? 14) + 1, 
+    );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AutoSizeText(
           '$key: ',
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: bodyMediumStyle,
           maxLines: 1,
+          minFontSize: 10,
           overflow: TextOverflow.ellipsis,
         ),
         Flexible(
-          fit: FlexFit.loose,
           child: AutoSizeText(
             value,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize! + 1),
+            style: bodyMediumBoldStyle,
+            minFontSize: 11,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -151,56 +259,73 @@ class _BooksState extends State<Books> {
     );
   }
 
-  displayBooksGrid(Size size) {
-    double width =
-        size.width / 2 > coverMaxWidth ? size.width / 2 : coverMaxWidth;
-    return PagedGridView(
+  Widget displayBooksGrid(Size size) {
+    double maxExtentWidth = size.width / 2 > coverMaxWidth ? size.width / 2 : coverMaxWidth;
+    return GridView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(10),
+      itemCount: _books.length + (_isFetchingMore ? 1 : 0),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          maxCrossAxisExtent: width,
-          childAspectRatio: .53),
-      pagingController: _pagingController,
-      builderDelegate: PagedChildBuilderDelegate<Book>(
-        itemBuilder: (context, book, index) => bookGridItem(book, width),
-        firstPageProgressIndicatorBuilder: (context) =>
-            progressIndicator(context),
+          maxCrossAxisExtent: maxExtentWidth,
+          childAspectRatio: .53
       ),
+      itemBuilder: (context, index) {
+        if (index == _books.length) {
+          return _buildLoadingIndicator();
+        }
+        final book = _books[index];
+        return bookGridItem(book, maxExtentWidth);
+      },
     );
   }
 
   Widget bookGridItem(Book book, double width) {
+    final double textContainerHeight = width / 9;
+    final double imageHeight = (width / 0.53) - textContainerHeight;
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () async {
-        await launch(book.goodreadsLink);
+        final uri = Uri.parse(book.goodreadsLink);
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not open link: ${book.goodreadsLink}')),
+            );
+          }
+        }
       },
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: width,
+            height: imageHeight.clamp(50.0, 500.0),
             child: ClipRRect(
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(containerBorderRadius),
                   topRight: Radius.circular(containerBorderRadius)),
               child: Hero(
-                tag: book.coverUrl,
+                tag: 'book_grid_${book.goodreadsLink}',
                 child: CachedNetworkImage(
-                  fit: BoxFit.fill,
+                  fit: BoxFit.cover,
                   imageUrl: book.coverUrl,
-                  placeholder: (context, url) =>
-                      progressIndicator(context, color: Colors.grey),
-                  errorWidget: (context, url, error) => Icon(Icons.error),
+                  placeholder: (context, url) => progressIndicator(context, color: Colors.grey),
+                  errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image)),
                 ),
               ),
             ),
           ),
           Container(
             width: width,
-            height: width / 9,
+            height: textContainerHeight.clamp(20.0, 60.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.only(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.only(
                   bottomRight: Radius.circular(containerBorderRadius),
                   bottomLeft: Radius.circular(containerBorderRadius)),
             ),
@@ -208,13 +333,153 @@ class _BooksState extends State<Books> {
               child: AutoSizeText(
                 book.title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    !.copyWith(fontWeight: FontWeight.bold),
-                minFontSize: 12,
+                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold) ??
+                    const TextStyle(fontWeight: FontWeight.bold),
+                minFontSize: 10,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget getViewButton(ViewType viewButton, Size size) {
+    double iconSize = (size.width * size.height / 15000).clamp(18.0, 36.0);
+    final theme = Theme.of(context);
+    final bool isActive = view == viewButton;
+    final shadowColor = theme.brightness == Brightness.dark
+        ? Colors.white.withAlpha(26) // ~0.1 opacity
+        : Colors.black.withAlpha(51); // ~0.2 opacity
+
+    return Transform.scale(
+      scale: isActive ? 1.1 : 0.9,
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(containerBorderRadius),
+          boxShadow: [
+            if (isActive)
+              BoxShadow(
+                color: shadowColor,
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              )
+          ],
+        ),
+        child: IconButton(
+          icon: Icon(
+            viewButton == ViewType.list
+                ? Icons.list_rounded
+                : Icons.grid_view_rounded,
+            color: theme.colorScheme.secondary,
+            size: iconSize,
+          ),
+          tooltip: viewButton == ViewType.list ? 'List View' : 'Grid View',
+          onPressed: () {
+            if (view != viewButton) {
+              setState(() {
+                view = viewButton;
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    titleColor = getTitleColor(context);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: theme.colorScheme.surface,
+      statusBarColor: theme.colorScheme.surface,
+      statusBarIconBrightness: theme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+      systemNavigationBarIconBrightness: theme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+    ));
+
+    Size size = MediaQuery.of(context).size;
+    double controllerHeight = (size.width * size.height / 5000).clamp(50.0, 80.0);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface, 
+      appBar: AppBar(
+        elevation: 1,
+        foregroundColor: titleColor,
+        backgroundColor: theme.colorScheme.surface,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
+          tooltip: 'Back',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          englishLanguage['books'] ?? 'Books',
+          style: theme.textTheme.titleMedium?.copyWith(color: titleColor),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: theme.colorScheme.surface,
+            height: controllerHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                DropdownButton<String>(
+                  value: shelf,
+                  dropdownColor: theme.colorScheme.surface,
+                  icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.secondary),
+                  iconSize: 24,
+                  elevation: 4,
+                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.secondary),
+                  underline: const SizedBox.shrink(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null && newValue != shelf) {
+                      setState(() {
+                        shelf = newValue;
+                        _refreshBooks();
+                      });
+                    }
+                  },
+                  items: shelves.keys
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                const Spacer(),
+                getViewButton(ViewType.list, size),
+                const SizedBox(width: 8),
+                getViewButton(ViewType.grid, size),
+              ],
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshBooks,
+              child: buildBookListContainer(size),
+            ),
+          ),
+          Container(
+            color: theme.colorScheme.surface.withAlpha(204), // ~0.8 opacity
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Center(
+              child: Text(
+                // Removed ?? '' based on dead_null_aware_expression warning
+                getKeyValue(englishLanguage, 'goodreadsMessage'), 
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withAlpha(179), // ~0.7 opacity
+                    fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
               ),
             ),
           )
@@ -223,158 +488,10 @@ class _BooksState extends State<Books> {
     );
   }
 
-  Widget getViewButton(ViewType viewButton, Size size) {
-    return Transform.scale(
-      scale: view == viewButton ? 1.1 : 0.9,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(containerBorderRadius),
-          boxShadow: [
-            view == viewButton
-                ? BoxShadow(
-                    color: jet.withOpacity(0.5),
-                    spreadRadius: 1,
-                    blurRadius: 2,
-                    offset: Offset(0, 1), // changes position of shadow
-                  )
-                : BoxShadow(),
-          ],
-        ),
-        child: Center(
-          child: IconButton(
-            icon: Icon(
-              viewButton == ViewType.list ? Icons.list : Icons.grid_view,
-              color: Theme.of(context)!.colorScheme.secondary,
-              size: size.width * size.height / 15000,
-            ),
-            onPressed: () {
-              if (view != viewButton)
-                setState(() {
-                  view = viewButton;
-                });
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: Theme.of(context).colorScheme.surface,
-      statusBarColor: Theme.of(context).colorScheme.surface,
-    ));
-    titleColor = getTitleColor(context);
-    Size size = MediaQuery.of(context).size;
-    return Scaffold(
-        backgroundColor: Theme.of(context)!.colorScheme.secondary,
-        appBar: AppBar(
-          elevation: 1,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: titleColor.withOpacity(0.5),
-              size: 20,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          title: Text(
-            englishLanguage['books']!,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                !.copyWith(color: titleColor),
-          ),
-          centerTitle: true,
-        ),
-        body: Column(
-          children: [
-            // view controllers
-            Container(
-              color: Theme.of(context).colorScheme.surface,
-              height: size.width * size.height / 5000,
-              padding: EdgeInsets.all(10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius:
-                            BorderRadius.circular(containerBorderRadius)),
-                    child: DropdownButton<String>(
-                      value: shelf,
-                      dropdownColor: Theme.of(context).colorScheme.surface,
-                      icon: Icon(
-                        Icons.arrow_drop_down,
-                      ),
-                      iconSize: 15,
-                      elevation: 16,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          !.copyWith(color: Theme.of(context).colorScheme.secondary),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          shelf = newValue!;
-                          _pagingController.refresh();
-                        });
-                      },
-                      items: shelves.keys
-                          .toList()
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(),
-                  ),
-                  getViewButton(ViewType.list, size),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  getViewButton(ViewType.grid, size),
-                ],
-              ),
-            ),
-            // books display
-            Expanded(
-              child: view == ViewType.list
-                  ? displayBooksList(size)
-                  : displayBooksGrid(size),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Container(
-              color: Theme.of(context).colorScheme.surface,
-              width: double.infinity,
-              child: Center(
-                child: Text(
-                  getKeyValue(englishLanguage, 'goodreadsMessage'),
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w300),
-                ),
-              ),
-            )
-          ],
-        ));
-  }
-
   @override
   void dispose() {
-    _pagingController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 }
